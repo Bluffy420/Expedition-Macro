@@ -28,11 +28,16 @@
                     <TextBlock x:Name="RecordingDescription" Margin="0,5,0,18" MaxWidth="680" HorizontalAlignment="Left" Style="{StaticResource Caption}" Text="Recording starts after F6 and ends when F6 is pressed again." />
                     <Grid MaxWidth="680" HorizontalAlignment="Stretch">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="14" /><ColumnDefinition Width="150" /></Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions><RowDefinition Height="64" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                        <Grid.RowDefinitions><RowDefinition Height="64" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                         <StackPanel><TextBlock Style="{StaticResource FieldLabel}" Text="Model name" /><TextBox x:Name="ModelNameText" Margin="0,7,0,0" Text="Placement model" /></StackPanel>
                         <StackPanel Grid.Column="2"><TextBlock Style="{StaticResource FieldLabel}" Text="Default delay, ms" /><TextBox x:Name="DefaultDelayText" Margin="0,7,0,0" Text="900" /></StackPanel>
                         <CheckBox x:Name="RecordedTimingCheck" Grid.Row="1" Grid.ColumnSpan="3" VerticalAlignment="Center" Content="Use recorded click-to-next-selection timing" />
                         <CheckBox x:Name="PlaybackOverrideCheck" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,10,0,0" VerticalAlignment="Center" Content="Override playback with the default delay" IsChecked="True" />
+                        <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Margin="0,12,0,0">
+                            <TextBlock Style="{StaticResource FieldLabel}" Text="Align camera before recording (optional)" />
+                            <ComboBox x:Name="CameraModelCombo" Margin="0,7,0,0" DisplayMemberPath="Name" />
+                            <TextBlock Margin="0,5,0,0" Style="{StaticResource Caption}" Text="Pick the map's camera model to auto-align the view before recording, so placements match the aligned runtime camera. Recording aborts if alignment fails." />
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </Border>

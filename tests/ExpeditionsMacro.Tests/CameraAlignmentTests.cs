@@ -189,6 +189,23 @@ public sealed class CameraAlignmentTests
     }
 
     [Fact]
+    public void RegisteredCameraScore_ToleratesWindowedDefocusWithoutAcceptingWrongYaw()
+    {
+        ImageFrame goalClient = VisionScorerTests.Pattern(RobloxClientProfile.Width, RobloxClientProfile.Height);
+        ImageFrame blurredGoalClient = VisionScorerTests.Blur(goalClient, 9);
+        ImageFrame blurredWrongClient = VisionScorerTests.Blur(Shift(goalClient, 24), 9);
+        ImageFrame reference = CameraRegionAnalyzer.BuildComposite(goalClient, TestRegions);
+        ImageFrame blurredGoal = CameraRegionAnalyzer.BuildComposite(blurredGoalClient, TestRegions);
+        ImageFrame blurredWrong = CameraRegionAnalyzer.BuildComposite(blurredWrongClient, TestRegions);
+
+        CameraRegisteredMatch goal = CameraRegisteredScorer.ScoreComposite(reference, blurredGoal);
+        CameraRegisteredMatch wrong = CameraRegisteredScorer.ScoreComposite(reference, blurredWrong);
+
+        Assert.True(goal.Score > 0.84, $"Defocused goal score was {goal.Score:P1}.");
+        Assert.True(wrong.Score < goal.Score - 0.15, $"Defocused goal {goal.Score:P1}, wrong-yaw {wrong.Score:P1}.");
+    }
+
+    [Fact]
     public void HueSimilarity_ReranksMatchingMapColorWithoutOverridingGeometry()
     {
         ImageFrame cyan = SolidRgb(48, 32, 20, 190, 210);

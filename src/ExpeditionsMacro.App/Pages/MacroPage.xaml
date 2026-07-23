@@ -134,6 +134,7 @@
                         <StackPanel Grid.Column="6">
                             <TextBlock Style="{StaticResource FieldLabel}" Text="State" />
                             <CheckBox x:Name="TaskEnabledCheck" Margin="0,7,0,0" IsChecked="True" Content="Enabled" />
+                            <CheckBox x:Name="TaskCycleCheck" Margin="0,6,0,0" Content="Cycle" ToolTip="Expedition only: run one run, then rotate to the next enabled Expedition preset, repeating until the plan is stopped." Visibility="Collapsed" />
                         </StackPanel>
                         <Button x:Name="AddTaskButton" Grid.Column="8" Margin="0,21,0,0" VerticalAlignment="Top" Style="{StaticResource PrimaryButton}" icons:Lucide.Icon="Plus" Content="Add task" Click="AddOrUpdateTask_Click" />
                         <Button x:Name="CancelTaskEditButton" Grid.Column="10" Margin="0,21,0,0" Height="40" VerticalAlignment="Top" Visibility="Collapsed" icons:Lucide.Icon="X" Content="Cancel" Click="CancelTaskEdit_Click" />

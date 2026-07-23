@@ -303,7 +303,9 @@ public partial class MacroPage : UserControl, IAppPage
             cancellationToken,
             stopAfterCurrentRunUtc: null,
             recoverableFailure: (error, token) => HandleRecoverableFailureAsync("Expeditions Macro", webhook, discordUserId, error, token),
-            maximumRuns: null,
+            // A cycling Expedition runs exactly one run, then returns so the scheduler can rotate
+            // to the next enabled Expedition preset. A non-cycling Expedition keeps repeating.
+            maximumRuns: task.Cycle ? 1 : null,
             unitMenuKey,
             continueScheduledRoute: async (victories, defeats, runtime, token) =>
                 await recordResult(new ScheduledTaskResult(victories, defeats, runtime), token).ConfigureAwait(false) == ScheduledTaskContinuation.RepeatStage).ConfigureAwait(false);
@@ -604,6 +606,7 @@ public partial class MacroPage : UserControl, IAppPage
                 TargetVictories = runtimeTarget ? 1 : target,
                 TargetRuntimeMinutes = runtimeTarget ? target : 180,
                 CompleteOnRuntimeDefeat = runtimeTarget,
+                Cycle = kind.Value == MacroTaskKind.Expedition && TaskCycleCheck.IsChecked == true,
             };
             definition.Validate();
 
@@ -632,6 +635,7 @@ public partial class MacroPage : UserControl, IAppPage
         RefreshVisiblePresets();
         TaskPresetCombo.SelectedItem = _visiblePresets.FirstOrDefault(value => value.Kind == row.Definition.Kind && value.Id == row.Definition.PresetId);
         TaskEnabledCheck.IsChecked = row.Definition.Enabled;
+        TaskCycleCheck.IsChecked = row.Definition.Cycle;
         TaskTargetText.Text = row.Definition.CompleteOnRuntimeDefeat
             ? row.Definition.TargetRuntimeMinutes.ToString(CultureInfo.InvariantCulture)
             : row.Definition.TargetVictories.ToString(CultureInfo.InvariantCulture);
@@ -673,6 +677,7 @@ public partial class MacroPage : UserControl, IAppPage
         AddTaskButton.Content = "Add task";
         CancelTaskEditButton.Visibility = Visibility.Collapsed;
         TaskEnabledCheck.IsChecked = true;
+        TaskCycleCheck.IsChecked = false;
         TaskTargetText.Text = "1";
         UpdateTaskTargetEditor();
     }
@@ -737,6 +742,12 @@ public partial class MacroPage : UserControl, IAppPage
         if (challenge) TaskTargetText.Text = "Every reset";
         else if (runtime && !int.TryParse(TaskTargetText.Text, out _)) TaskTargetText.Text = "180";
         else if (!runtime && !int.TryParse(TaskTargetText.Text, out _)) TaskTargetText.Text = "1";
+        if (TaskCycleCheck is not null)
+        {
+            TaskCycleCheck.Visibility = kind == MacroTaskKind.Expedition ? Visibility.Visible : Visibility.Collapsed;
+            TaskCycleCheck.IsEnabled = !_services.Coordinator.IsBusy;
+            if (kind != MacroTaskKind.Expedition) TaskCycleCheck.IsChecked = false;
+        }
     }
 
     private void ApplyTotals()
@@ -922,7 +933,8 @@ public partial class MacroPage : UserControl, IAppPage
         left.PresetId == right.PresetId &&
         left.TargetVictories == right.TargetVictories &&
         left.TargetRuntimeMinutes == right.TargetRuntimeMinutes &&
-        left.CompleteOnRuntimeDefeat == right.CompleteOnRuntimeDefeat;
+        left.CompleteOnRuntimeDefeat == right.CompleteOnRuntimeDefeat &&
+        left.Cycle == right.Cycle;
 
     private static int ParsePositiveInt(TextBox field, string label) =>
         int.TryParse(field.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value > 0

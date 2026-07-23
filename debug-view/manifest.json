@@ -1,0 +1,32 @@
+[
+  {
+    "map": "School Grounds / Map 1",
+    "original": "C:\\Users\\Shreshth Bhardwaj\\Desktop\\expeditions-macro-src\\datasets\\anime-expeditions\\camera-rotations\\Expedition_Map1\\goal.png",
+    "local": "C:\\Users\\Shreshth Bhardwaj\\AppData\\Local\\ExpeditionsMacro\\camera-models\\school-windowed-f3fce3fbf1\\goal.png",
+    "comparison": "C:\\Users\\Shreshth Bhardwaj\\Desktop\\expeditions-macro-src\\debug-view\\comparisons\\school-grounds-original-vs-local.png",
+    "dimensions": [
+      808,
+      611
+    ]
+  },
+  {
+    "map": "Flower Forest / Map 2",
+    "original": "C:\\Users\\Shreshth Bhardwaj\\Desktop\\expeditions-macro-src\\datasets\\anime-expeditions\\camera-rotations\\Expedition_Map2\\goal.png",
+    "local": "C:\\Users\\Shreshth Bhardwaj\\AppData\\Local\\ExpeditionsMacro\\camera-models\\expedition-flower-forest-9dd0eac650\\goal.png",
+    "comparison": "C:\\Users\\Shreshth Bhardwaj\\Desktop\\expeditions-macro-src\\debug-view\\comparisons\\flower-forest-original-vs-local.png",
+    "dimensions": [
+      808,
+      611
+    ]
+  },
+  {
+    "map": "Rose Kingdom / Map 3",
+    "original": "C:\\Users\\Shreshth Bhardwaj\\Desktop\\expeditions-macro-src\\datasets\\anime-expeditions\\camera-rotations\\Expedition_Map3\\goal.png",
+    "local": "C:\\Users\\Shreshth Bhardwaj\\AppData\\Local\\ExpeditionsMacro\\camera-models\\expedition-rose-kingdom-e30bbbdfc5\\goal.png",
+    "comparison": "C:\\Users\\Shreshth Bhardwaj\\Desktop\\expeditions-macro-src\\debug-view\\comparisons\\rose-kingdom-original-vs-local.png",
+    "dimensions": [
+      808,
+      611
+    ]
+  }
+]

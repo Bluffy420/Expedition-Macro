@@ -1,5 +1,7 @@
 using ExpeditionsMacro.Core.Imaging;
 using ExpeditionsMacro.Vision;
+using ExpeditionsMacro.Vision.Infrastructure;
+using OpenCvSharp;
 
 namespace ExpeditionsMacro.Tests;
 
@@ -62,6 +64,21 @@ public sealed class VisionScorerTests
         Assert.InRange(threshold, 0.51, 0.945);
     }
 
+    [Fact]
+    public void RobustSimilarity_ToleratesWindowedDefocusWithoutAcceptingWrongYaw()
+    {
+        ImageFrame goal = Pattern(240, 180);
+        ImageFrame blurred = Blur(goal, 9);
+        ImageFrame blurredWrongYaw = Blur(Shift(goal, 27, 13), 9);
+        ImageFrame reference = VisionScorer.PrepareGray(goal);
+
+        double blurredScore = VisionScorer.ScoreFrame(reference, blurred);
+        double wrongScore = VisionScorer.ScoreFrame(reference, blurredWrongYaw);
+
+        Assert.True(blurredScore > 0.80, $"Defocused score was {blurredScore:P1}.");
+        Assert.True(blurredScore > wrongScore + 0.15, $"Defocused {blurredScore:P1}, wrong-yaw {wrongScore:P1}.");
+    }
+
     internal static ImageFrame Pattern(int width, int height)
     {
         byte[] pixels = new byte[width * height * 3];
@@ -101,4 +118,12 @@ public sealed class VisionScorerTests
     }
 
     private static ImageFrame Gray(int width, int height, byte[] pixels) => new(width, height, PixelFormat.Gray8, pixels, takeOwnership: true);
+
+    internal static ImageFrame Blur(ImageFrame source, int kernelSize)
+    {
+        using Mat mat = ImageCodec.ToMat(source);
+        using Mat blurred = new();
+        Cv2.GaussianBlur(mat, blurred, new Size(kernelSize, kernelSize), 0);
+        return ImageCodec.FromMat(blurred, source.Format);
+    }
 }

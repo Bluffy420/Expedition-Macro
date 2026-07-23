@@ -238,6 +238,82 @@ public sealed class MacroSchedulerTests
         }
     }
 
+    [Fact]
+    public void CyclingExpedition_IsRecurringAndNeverCompletes()
+    {
+        MacroTaskDefinition cycle = Task("cycle", MacroTaskKind.Expedition, priority: 1) with { Cycle = true, TargetVictories = 1 };
+        Assert.True(cycle.IsRecurring);
+        cycle.Validate();
+
+        MacroTaskProgress after = MacroScheduler.Advance(
+            cycle,
+            new MacroTaskProgress { TaskId = cycle.Id },
+            new ScheduledTaskResult(1, 0, TimeSpan.FromMinutes(3)),
+            DateTimeOffset.UtcNow);
+
+        Assert.False(after.Completed);
+        Assert.Equal(1, after.Victories);
+    }
+
+    [Fact]
+    public void Cycle_IsRejectedForNonExpeditionTasks()
+    {
+        MacroTaskDefinition challenge = Task("challenge", MacroTaskKind.Challenge, priority: 1) with { Cycle = true };
+        MacroTaskDefinition story = Task("story", MacroTaskKind.Story, priority: 1) with { Cycle = true };
+
+        Assert.Throws<InvalidDataException>(challenge.Validate);
+        Assert.Throws<InvalidDataException>(story.Validate);
+    }
+
+    [Fact]
+    public void CyclingExpeditions_RoundRobinByLeastRecentlyRun()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        MacroTaskDefinition a = Task("a", MacroTaskKind.Expedition, priority: 1) with { Cycle = true };
+        MacroTaskDefinition b = Task("b", MacroTaskKind.Expedition, priority: 2) with { Cycle = true };
+        MacroTaskDefinition c = Task("c", MacroTaskKind.Expedition, priority: 3) with { Cycle = true };
+        MacroPlan plan = Plan(a, b, c);
+
+        // Nothing has run yet: the never-run tasks rotate in priority order starting with A.
+        Assert.Equal(a, MacroScheduler.SelectNext(plan, now));
+
+        // After A runs, B (never run) is next even though A has higher priority.
+        MacroTaskProgress afterA = MacroScheduler.Advance(a, plan.ProgressFor(a.Id), new ScheduledTaskResult(1, 0, TimeSpan.FromMinutes(2)), now);
+        plan = plan with { Progress = [afterA, plan.ProgressFor(b.Id), plan.ProgressFor(c.Id)] };
+        Assert.Equal(b, MacroScheduler.SelectNext(plan, now.AddSeconds(1)));
+
+        // After B runs, C (never run) is next.
+        MacroTaskProgress afterB = MacroScheduler.Advance(b, plan.ProgressFor(b.Id), new ScheduledTaskResult(1, 0, TimeSpan.FromMinutes(2)), now.AddSeconds(1));
+        plan = plan with { Progress = [afterA, afterB, plan.ProgressFor(c.Id)] };
+        Assert.Equal(c, MacroScheduler.SelectNext(plan, now.AddSeconds(2)));
+
+        // After C runs, all have run; the least-recently-run (A) rotates back to the front.
+        MacroTaskProgress afterC = MacroScheduler.Advance(c, plan.ProgressFor(c.Id), new ScheduledTaskResult(1, 0, TimeSpan.FromMinutes(2)), now.AddSeconds(2));
+        plan = plan with { Progress = [afterA, afterB, afterC] };
+        Assert.Equal(a, MacroScheduler.SelectNext(plan, now.AddSeconds(3)));
+    }
+
+    [Fact]
+    public void CyclingExpeditions_StayEligibleAcrossManyRuns()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        MacroTaskDefinition a = Task("a", MacroTaskKind.Expedition, priority: 1) with { Cycle = true };
+        MacroTaskDefinition b = Task("b", MacroTaskKind.Expedition, priority: 2) with { Cycle = true };
+        MacroPlan plan = Plan(a, b);
+
+        // Simulate several cycles; selection must keep alternating and never return null.
+        string[] expected = ["a", "b", "a", "b", "a", "b"];
+        foreach (string expectedId in expected)
+        {
+            MacroTaskDefinition? next = MacroScheduler.SelectNext(plan, now);
+            Assert.NotNull(next);
+            Assert.Equal(expectedId, next.Id);
+            MacroTaskProgress after = MacroScheduler.Advance(next, plan.ProgressFor(next.Id), new ScheduledTaskResult(1, 0, TimeSpan.FromMinutes(2)), now);
+            plan = plan with { Progress = plan.Tasks.Select(task => task.Id == next.Id ? after : plan.ProgressFor(task.Id)).ToArray() };
+            now = now.AddSeconds(1);
+        }
+    }
+
     private static MacroTaskDefinition Task(string id, MacroTaskKind kind, int priority) => new()
     {
         Id = id,

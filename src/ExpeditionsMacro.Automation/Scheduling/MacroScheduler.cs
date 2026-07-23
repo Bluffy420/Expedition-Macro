@@ -108,16 +108,45 @@ public sealed class MacroScheduler
         return reset;
     }
 
-    public static MacroTaskDefinition? SelectNext(MacroPlan plan, DateTimeOffset now) =>
-        plan.Tasks
+    public static MacroTaskDefinition? SelectNext(MacroPlan plan, DateTimeOffset now)
+    {
+        var eligible = plan.Tasks
             .Select((task, index) => new { Task = task, Index = index, Progress = plan.ProgressFor(task.Id) })
             .Where(value => value.Task.Enabled)
             .Where(value => value.Task.IsRecurring || !value.Progress.Completed)
             .Where(value => value.Progress.NextEligibleAtUtc is null || value.Progress.NextEligibleAtUtc <= now)
+            .ToArray();
+
+        // Cycling Expedition tasks rotate among themselves by least-recently-run (never = first),
+        // so several Expedition presets cycle A→B→C→A until the plan is stopped, independent of
+        // their row priority. The cycling group as a whole is anchored at its best (lowest)
+        // priority so it still interleaves correctly with non-cycling tasks.
+        var cycling = eligible
+            .Where(value => value.Task.Kind == MacroTaskKind.Expedition && value.Task.Cycle)
+            .ToArray();
+        if (cycling.Length > 0)
+        {
+            var next = cycling
+                .OrderBy(value => value.Progress.LastAttemptAt ?? DateTimeOffset.MinValue)
+                .ThenBy(value => value.Task.Priority)
+                .ThenBy(value => value.Index)
+                .First();
+            int anchor = cycling.Min(value => value.Task.Priority);
+            var competitor = eligible
+                .Where(value => !(value.Task.Kind == MacroTaskKind.Expedition && value.Task.Cycle))
+                .OrderBy(value => value.Task.Priority)
+                .ThenBy(value => value.Index)
+                .FirstOrDefault();
+            if (competitor is null || anchor <= competitor.Task.Priority) return next.Task;
+            return competitor.Task;
+        }
+
+        return eligible
             .OrderBy(value => value.Task.Priority)
             .ThenBy(value => value.Index)
             .Select(value => value.Task)
             .FirstOrDefault();
+    }
 
     internal static MacroTaskProgress Advance(
         MacroTaskDefinition task,
@@ -131,6 +160,9 @@ public sealed class MacroScheduler
         bool completed = task.Kind switch
         {
             MacroTaskKind.Challenge => false,
+            // A cycling Expedition never completes; it stays eligible so the scheduler keeps
+            // rotating through the enabled Expedition presets until the plan is stopped.
+            MacroTaskKind.Expedition when task.Cycle => false,
             MacroTaskKind.Story when task.CompleteOnRuntimeDefeat =>
                 result.Defeats > 0 && runtime >= task.TargetRuntimeMinutes * 60L,
             _ => victories >= task.TargetVictories,

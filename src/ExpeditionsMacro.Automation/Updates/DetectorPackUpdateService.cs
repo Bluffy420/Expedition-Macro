@@ -16,7 +16,7 @@ public sealed record DetectorPackUpdate(
 
 public sealed partial class DetectorPackUpdateService : IDisposable
 {
-    private const string ReleasesApi = "https://api.github.com/repos/LeniLilac/expeditions-macro/releases?per_page=30";
+    private const string ReleasesApi = "https://api.github.com/repos/Bluffy420/Expedition-Macro/releases?per_page=30";
     private readonly DetectorPackRepository _repository;
     private readonly HttpClient _httpClient;
 

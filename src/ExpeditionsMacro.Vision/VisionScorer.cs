@@ -107,7 +107,10 @@ public static class VisionScorer
                 double gradient = GradientCosine(refGxTile, refGyTile, curGxTile, curGyTile);
                 double chamfer = ChamferSimilarity(refEdgeTile, curEdgeTile);
                 double luminance = NormalizedCorrelation(refTile, curTile);
-                scores.Add(0.45 * gradient + 0.35 * chamfer + 0.20 * luminance);
+                // Defocus fragments Canny edges and inflates chamfer distance, while gradient
+                // direction and normalized luminance stay comparatively stable. Favor the
+                // blur-tolerant terms so a sharp reference still matches a softer runtime frame.
+                scores.Add(0.50 * gradient + 0.22 * chamfer + 0.28 * luminance);
             }
         }
 

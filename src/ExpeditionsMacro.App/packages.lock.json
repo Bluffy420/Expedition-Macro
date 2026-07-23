@@ -60,9 +60,9 @@
       "expeditionsmacro.automation": {
         "type": "Project",
         "dependencies": {
-          "ExpeditionsMacro.Core": "[1.3.0-beta.5, )",
-          "ExpeditionsMacro.Vision": "[1.3.0-beta.5, )",
-          "ExpeditionsMacro.Windows": "[1.3.0-beta.5, )"
+          "ExpeditionsMacro.Core": "[1.3.0-beta.14, )",
+          "ExpeditionsMacro.Vision": "[1.3.0-beta.14, )",
+          "ExpeditionsMacro.Windows": "[1.3.0-beta.14, )"
         }
       },
       "expeditionsmacro.core": {
@@ -71,14 +71,14 @@
       "expeditionsmacro.vision": {
         "type": "Project",
         "dependencies": {
-          "ExpeditionsMacro.Core": "[1.3.0-beta.5, )",
+          "ExpeditionsMacro.Core": "[1.3.0-beta.14, )",
           "OpenCvSharp4.Windows": "[4.13.0.20260627, )"
         }
       },
       "expeditionsmacro.windows": {
         "type": "Project",
         "dependencies": {
-          "ExpeditionsMacro.Core": "[1.3.0-beta.5, )",
+          "ExpeditionsMacro.Core": "[1.3.0-beta.14, )",
           "Vortice.Direct3D11": "[3.8.3, )"
         }
       },

@@ -35,8 +35,8 @@
     },
     {
       "path": "src/ExpeditionsMacro.App/Pages/MacroPage.xaml.cs",
-      "maxLines": 950,
-      "reason": "Existing page-controller debt; move scheduling, persistence, and operation coordination into focused services."
+      "maxLines": 962,
+      "reason": "Existing page-controller debt; local Expedition cycling controls add a small amount of orchestration until scheduling is extracted."
     },
     {
       "path": "src/ExpeditionsMacro.Windows/WindowsRobloxAutomation.cs",
@@ -111,6 +111,10 @@
     "tools/ExpeditionsMacro.DeepDebugViewer/ExpeditionsMacro.DeepDebugViewer.csproj": [],
     "tools/ExpeditionsMacro.DeepDebugViewer.Tests/ExpeditionsMacro.DeepDebugViewer.Tests.csproj": [
       "tools/ExpeditionsMacro.DeepDebugViewer/ExpeditionsMacro.DeepDebugViewer.csproj"
+    ],
+    "tools/ScoreProbe/ScoreProbe.csproj": [
+      "src/ExpeditionsMacro.Vision/ExpeditionsMacro.Vision.csproj",
+      "src/ExpeditionsMacro.Windows/ExpeditionsMacro.Windows.csproj"
     ]
   }
 }

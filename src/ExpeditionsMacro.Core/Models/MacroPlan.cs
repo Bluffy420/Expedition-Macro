@@ -20,7 +20,11 @@ public sealed record MacroTaskDefinition
     public int TargetRuntimeMinutes { get; init; } = 180;
     public bool CompleteOnRuntimeDefeat { get; init; }
 
-    public bool IsRecurring => Kind == MacroTaskKind.Challenge;
+    // A cycling Expedition runs one full run, then yields to the next eligible preset so
+    // several Expedition presets rotate (each map's loot differs) until the plan is stopped.
+    public bool Cycle { get; init; }
+
+    public bool IsRecurring => Kind == MacroTaskKind.Challenge || (Kind == MacroTaskKind.Expedition && Cycle);
 
     public void Validate()
     {
@@ -30,6 +34,7 @@ public sealed record MacroTaskDefinition
         if (Priority is < 1 or > 9999) throw new InvalidDataException("Task priority must be 1 through 9999.");
         if (TargetVictories is < 1 or > 100000) throw new InvalidDataException("Victory target must be 1 through 100000.");
         if (CompleteOnRuntimeDefeat && Kind != MacroTaskKind.Story) throw new InvalidDataException("Only an Infinite Story task can use a runtime target.");
+        if (Cycle && Kind != MacroTaskKind.Expedition) throw new InvalidDataException("Only an Expedition task can cycle through presets.");
         if (TargetRuntimeMinutes is < 1 or > 10080) throw new InvalidDataException("Runtime target must be 1 minute through 7 days.");
     }
 

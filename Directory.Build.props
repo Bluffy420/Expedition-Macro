@@ -13,7 +13,7 @@
     <Authors>Expeditions Macro contributors</Authors>
     <Copyright>Copyright 2026 Expeditions Macro contributors</Copyright>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/LeniLilac/expeditions-macro</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Bluffy420/Expedition-Macro</RepositoryUrl>
     <PackageLicenseExpression>PolyForm-Noncommercial-1.0.0</PackageLicenseExpression>
     <ApplicationIcon Condition="Exists('$(MSBuildThisFileDirectory)assets\app.ico')">$(MSBuildThisFileDirectory)assets\app.ico</ApplicationIcon>
   </PropertyGroup>

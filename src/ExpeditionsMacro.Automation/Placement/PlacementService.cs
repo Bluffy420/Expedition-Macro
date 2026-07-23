@@ -3,6 +3,7 @@ using ExpeditionsMacro.Core.Geometry;
 using ExpeditionsMacro.Core.Models;
 using ExpeditionsMacro.Core.Persistence;
 using ExpeditionsMacro.Core.Runtime;
+using ExpeditionsMacro.Automation.Camera;
 
 namespace ExpeditionsMacro.Automation.Placement;
 
@@ -28,7 +29,10 @@ public sealed class PlacementService
         bool useRecordedDelays,
         Action<PlacementCapture>? captured = null,
         Action<string>? status = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        CameraAlignmentEngine? camera = null,
+        CameraModel? cameraModel = null,
+        IProgress<MacroProgress>? progress = null)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Enter a placement model name.", nameof(name));
         RobloxWindow window = _automation.FindWindow() ?? throw new InvalidOperationException("No visible Roblox window was found.");
@@ -46,6 +50,22 @@ public sealed class PlacementService
         if (client.Width != RobloxClientProfile.Width || client.Height != RobloxClientProfile.Height)
         {
             throw new InvalidOperationException($"Roblox did not accept the standard {RobloxClientProfile.Width} × {RobloxClientProfile.Height} client size.");
+        }
+        if (cameraModel is not null)
+        {
+            if (camera is null) throw new ArgumentNullException(nameof(camera), "A camera alignment engine is required when a camera model is supplied.");
+            status?.Invoke($"Aligning the camera with '{cameraModel.Manifest.Name}' before recording.");
+            try
+            {
+                await camera.AlignAsync(cameraModel, window, manageShiftLock: true, progress, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                // Placements recorded from an unaligned camera would not match the aligned view the
+                // macro uses at runtime, so abort rather than save a misleading model.
+                throw new InvalidOperationException($"Camera alignment failed before placement recording: {error.Message}", error);
+            }
+            EnsureFocus(window);
         }
         recording = await _capture.RecordAsync(window, captured, status, cancellationToken).ConfigureAwait(false);
         (int width, int height, IReadOnlyList<PlacementCapture> captures) = recording;

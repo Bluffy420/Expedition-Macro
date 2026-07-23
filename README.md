@@ -35,7 +35,7 @@ It uses screen capture and ordinary Windows input. It does not inject into Roblo
 
 ## Install
 
-1. Open the [latest GitHub Release](https://github.com/LeniLilac/expeditions-macro/releases/latest).
+1. Open the [latest GitHub Release](https://github.com/Bluffy420/Expedition-Macro/releases/latest).
 2. Download `ExpeditionsMacro-<version>-win-x64-setup.exe`, or the portable ZIP.
 3. Verify the file against `SHA256SUMS.txt` if desired.
 

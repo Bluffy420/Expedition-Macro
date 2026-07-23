@@ -18,6 +18,6 @@ For release updates, ZIP the contents of the version directory so `manifest.json
 
 `anime-expeditions-expeditions-<version>.zip`
 
-The app checks stable releases at `LeniLilac/expeditions-macro`, prompts before installation, and never updates a pack while automation owns Roblox input.
+The app checks stable releases at `Bluffy420/Expedition-Macro`, prompts before installation, and never updates a pack while automation owns Roblox input.
 
 At startup, an older bundled pack is installed automatically. A same-version installation is replaced when its manifest or on-disk hashes differ, while a newer installed pack is preserved.

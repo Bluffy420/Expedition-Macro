@@ -388,7 +388,11 @@ public static class CameraRegisteredScorer
                     ? 0
                     : Math.Clamp(gradientDot / Math.Sqrt(gradientA * gradientB), 0, 1);
                 double magnitude = maximumMagnitude < 1e-6 ? 0 : minimumMagnitude / maximumMagnitude;
-                scores.Add(0.50 * gradient + 0.30 * luminance + 0.20 * magnitude);
+                // Defocus and windowed-mode downscaling shrink gradient magnitudes far more
+                // than they disturb gradient direction or normalized luminance. Weight the
+                // blur-tolerant direction and luminance terms and keep the magnitude ratio as
+                // a weak cue only, so a sharp reference still matches a softer runtime frame.
+                scores.Add(0.55 * gradient + 0.38 * luminance + 0.07 * magnitude);
             }
         }
         if (scores.Count == 0) return 0;

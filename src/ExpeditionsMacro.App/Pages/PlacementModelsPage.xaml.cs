@@ -7,6 +7,7 @@ using ExpeditionsMacro.App.Services;
 using ExpeditionsMacro.Automation.Diagnostics;
 using ExpeditionsMacro.Core.Models;
 using ExpeditionsMacro.Core.Persistence;
+using ExpeditionsMacro.Core.Runtime;
 
 namespace ExpeditionsMacro.App.Pages;
 
@@ -16,6 +17,8 @@ public partial class PlacementModelsPage : UserControl, IAppPage
     private readonly ObservableCollection<PlacementModel> _models = [];
     private readonly ObservableCollection<PlacementStepRow> _steps = [];
     private PlacementModel? _selectedModel;
+
+    private sealed record CameraChoice(string? Id, string Name);
 
     public PlacementModelsPage(AppServices services)
     {
@@ -32,7 +35,22 @@ public partial class PlacementModelsPage : UserControl, IAppPage
     public async Task OnShownAsync()
     {
         UpdateHotkeyText();
+        await RefreshCameraModelsAsync();
         await RefreshModelsAsync(_selectedModel?.Id);
+    }
+
+    private async Task RefreshCameraModelsAsync()
+    {
+        IReadOnlyList<CameraModelManifest> manifests = await _services.CameraModels.ListAsync().ConfigureAwait(false);
+        await Dispatcher.InvokeAsync(() =>
+        {
+            object? selected = CameraModelCombo.SelectedItem;
+            string? selectedId = (selected as CameraChoice)?.Id;
+            var choices = new List<CameraChoice> { new(null, "(none — record without aligning)") };
+            choices.AddRange(manifests.Select(manifest => new CameraChoice(manifest.Id, manifest.Name)));
+            CameraModelCombo.ItemsSource = choices;
+            CameraModelCombo.SelectedItem = choices.FirstOrDefault(choice => choice.Id == selectedId) ?? choices[0];
+        });
     }
 
     internal async Task RefreshModelsAsync(string? selectedId = null)
@@ -88,7 +106,7 @@ public partial class PlacementModelsPage : UserControl, IAppPage
         }
     }
 
-    private void Record_Click(object sender, RoutedEventArgs e)
+    private async void Record_Click(object sender, RoutedEventArgs e)
     {
         string name = ModelNameText.Text.Trim();
         if (name.Length == 0) { StatusText.Text = "Enter a model name."; return; }
@@ -98,7 +116,29 @@ public partial class PlacementModelsPage : UserControl, IAppPage
             return;
         }
         bool useRecordedTiming = RecordedTimingCheck.IsChecked == true;
+
+        CameraModel? cameraModel = null;
+        if (CameraModelCombo.SelectedItem is CameraChoice { Id: not null } choice)
+        {
+            try
+            {
+                cameraModel = await _services.CameraModels.LoadAsync(choice.Id);
+                if (cameraModel is null) { StatusText.Text = $"Camera model '{choice.Name}' could not be loaded."; return; }
+            }
+            catch (Exception error)
+            {
+                StatusText.Text = error.Message;
+                return;
+            }
+        }
+
         _steps.Clear();
+        CameraModel? alignmentModel = cameraModel;
+        IProgress<MacroProgress> alignmentProgress = new InlineProgress<MacroProgress>(value => Dispatcher.BeginInvoke(() =>
+        {
+            StatusText.Text = value.Message;
+            OperationProgress.Value = Math.Clamp(value.Percent, 0, 100);
+        }));
         _services.Coordinator.Arm("Placement recording", async token =>
         {
             PlacementModel model = await _services.Placement.RecordAsync(
@@ -123,7 +163,10 @@ public partial class PlacementModelsPage : UserControl, IAppPage
                         DetailText.Text = message.Contains("Recording", StringComparison.OrdinalIgnoreCase) ? $"Press {_services.Hotkey.DisplayName} again to finish and save." : DetailText.Text;
                     });
                 },
-                cancellationToken: token);
+                cancellationToken: token,
+                camera: alignmentModel is null ? null : _services.Camera,
+                cameraModel: alignmentModel,
+                progress: alignmentProgress);
             await Dispatcher.InvokeAsync(() =>
             {
                 ApplyModel(model);
